@@ -30,4 +30,18 @@ router.post(
   }),
 );
 
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const habit = habits.find((h) => h.id === id);
+
+    if (!habit) {
+      return res.status(404).json({ error: "habit not found" });
+    }
+
+    res.status(200).json(habit);
+  }),
+);
+
 module.exports = router;
