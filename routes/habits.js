@@ -44,4 +44,34 @@ router.get(
   }),
 );
 
+router.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const habit = habits.find((h) => h.id === id);
+
+    if (!habit) {
+      return res.status(404).json({ error: "habit not found" });
+    }
+
+    const { title, target_days } = req.body;
+
+    if (target_days !== undefined && target_days <= 0) {
+      return res
+        .status(400)
+        .json({ error: "target_days must be greater than 0" });
+    }
+
+    if (title !== undefined) {
+      habit.title = title;
+    }
+
+    if (target_days !== undefined) {
+      habit.target_days = target_days;
+    }
+
+    res.status(200).json(habit);
+  }),
+);
+
 module.exports = router;
