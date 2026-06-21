@@ -22,13 +22,15 @@ router.post(
       return res.status(400).json({ error: "title is required" });
     }
 
-    const habit = {
-      id: habits.length + 1,
+    const [result] = await pool.query("INSERT INTO habits (title) VALUES (?)", [
       title,
-    };
+    ]);
 
-    habits.push(habit);
-    res.status(201).json(habit);
+    const [rows] = await pool.query("SELECT * FROM habits WHERE id = ?", [
+      result.insertId,
+    ]);
+
+    res.status(201).json(rows[0]);
   }),
 );
 
