@@ -38,13 +38,13 @@ router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const habit = habits.find((h) => h.id === id);
+    const [rows] = await pool.query("SELECT * FROM habits WHERE id = ?", [id]);
 
-    if (!habit) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: "habit not found" });
     }
 
-    res.status(200).json(habit);
+    res.status(200).json(rows[0]);
   }),
 );
 
