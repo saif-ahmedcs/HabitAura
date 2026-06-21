@@ -110,14 +110,20 @@ router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const index = habits.findIndex((h) => h.id === id);
 
-    if (index === -1) {
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "invalid id" });
+    }
+
+    const [result] = await pool.query("DELETE FROM habits WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: "habit not found" });
     }
 
-    habits.splice(index, 1);
-    res.status(204).send();
+    return res.status(200).json({
+      message: "Habit deleted successfully",
+    });
   }),
 );
 
