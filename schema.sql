@@ -1,0 +1,5 @@
+CREATE TABLE habits (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  target_days INT NULL
+);
