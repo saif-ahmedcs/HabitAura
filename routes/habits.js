@@ -1,6 +1,5 @@
 const express = require("express");
 const asyncHandler = require("../utils/asyncHandler");
-const habits = require("../data/habits");
 const pool = require("../db");
 
 const router = express.Router();
