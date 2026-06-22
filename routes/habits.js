@@ -126,4 +126,65 @@ router.delete(
   }),
 );
 
+router.post(
+  "/:id/logs",
+  asyncHandler(async (req, res) => {
+    const habitId = Number(req.params.id);
+
+    if (!Number.isInteger(habitId) || habitId <= 0) {
+      return res.status(400).json({ error: "invalid id" });
+    }
+
+    const { date } = req.body;
+
+    if (!date) {
+      return res.status(400).json({ error: "date is required" });
+    }
+
+    const dateFormatMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+    if (!dateFormatMatch) {
+      return res.status(400).json({ error: "invalid date format" });
+    }
+
+    const [, yearStr, monthStr, dayStr] = dateFormatMatch;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+
+    const asUTC = new Date(Date.UTC(year, month - 1, day));
+    const isRealCalendarDate =
+      asUTC.getUTCFullYear() === year &&
+      asUTC.getUTCMonth() === month - 1 &&
+      asUTC.getUTCDate() === day;
+
+    if (!isRealCalendarDate) {
+      return res.status(400).json({ error: "invalid date format" });
+    }
+
+    try {
+      const [result] = await pool.query(
+        "INSERT INTO habit_logs (habit_id, log_date) VALUES (?, ?)",
+        [habitId, date],
+      );
+
+      const [rows] = await pool.query("SELECT * FROM habit_logs WHERE id = ?", [
+        result.insertId,
+      ]);
+
+      res.status(201).json(rows[0]);
+    } catch (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res
+          .status(409)
+          .json({ error: "habit already logged for this date" });
+      }
+      if (err.code === "ER_NO_REFERENCED_ROW_2") {
+        return res.status(404).json({ error: "habit not found" });
+      }
+      throw err;
+    }
+  }),
+);
+
 module.exports = router;
