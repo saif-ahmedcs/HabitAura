@@ -85,3 +85,14 @@ lastLogDay = finalRun.endDay.
   should prevent duplicates from reaching here in practice.
 - Any date later than asOfDate is discarded during normalization above —
   defensive only, since check-in routes should never allow future-dated logs.
+
+**asOfDate source for GET /:id**
+`calculateStreaks` never determines "today" itself — asOfDate must come
+from the caller. There is no frontend yet, so for now GET /:id derives
+asOfDate from the server's current UTC date:
+`new Date().toISOString().slice(0, 10)`. This is allowed under the UTC-only
+rule because `toISOString()` always renders UTC regardless of server
+timezone — no local-time getter (getDate, getMonth, etc.) is involved.
+Once the frontend exists and supplies the client's local-date string, this
+server-clock fallback stays display-only; it is not used for check-in
+dates, which are already caller-supplied input.

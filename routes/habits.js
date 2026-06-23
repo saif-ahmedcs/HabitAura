@@ -1,6 +1,7 @@
 const express = require("express");
 const asyncHandler = require("../utils/asyncHandler");
 const pool = require("../db");
+const calculateStreaks = require("../utils/streak");
 
 const router = express.Router();
 
@@ -48,7 +49,19 @@ router.get(
       return res.status(404).json({ error: "habit not found" });
     }
 
-    res.status(200).json(rows[0]);
+    const [logRows] = await pool.query(
+      "SELECT log_date FROM habit_logs WHERE habit_id = ?",
+      [id],
+    );
+
+    const dateStrings = logRows.map((row) => row.log_date);
+    const asOfDate = new Date().toISOString().slice(0, 10);
+    const { currentStreak, longestStreak } = calculateStreaks(
+      dateStrings,
+      asOfDate,
+    );
+
+    res.status(200).json({ ...rows[0], currentStreak, longestStreak });
   }),
 );
 
