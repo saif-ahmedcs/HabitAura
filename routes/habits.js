@@ -187,4 +187,30 @@ router.post(
   }),
 );
 
+router.get(
+  "/:id/logs",
+  asyncHandler(async (req, res) => {
+    const habitId = Number(req.params.id);
+
+    if (!Number.isInteger(habitId) || habitId <= 0) {
+      return res.status(400).json({ error: "invalid id" });
+    }
+
+    const [habitRows] = await pool.query("SELECT * FROM habits WHERE id = ?", [
+      habitId,
+    ]);
+
+    if (habitRows.length === 0) {
+      return res.status(404).json({ error: "habit not found" });
+    }
+
+    const [logRows] = await pool.query(
+      "SELECT * FROM habit_logs WHERE habit_id = ? ORDER BY log_date ASC",
+      [habitId],
+    );
+
+    res.status(200).json(logRows);
+  }),
+);
+
 module.exports = router;
