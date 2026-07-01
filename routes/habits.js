@@ -205,6 +205,22 @@ router.post(
       return res.status(400).json({ error: "invalid date format" });
     }
 
+    const pending = await habitLogModel.findPendingByHabitAndDate(
+      habitId,
+      date,
+    );
+
+    if (pending) {
+      await habitLogModel.resolveDecision(pending.id, "recovered");
+
+      const [resolvedRows] = await pool.query(
+        "SELECT * FROM habit_logs WHERE id = ?",
+        [pending.id],
+      );
+
+      return res.status(200).json(resolvedRows[0]);
+    }
+
     try {
       const [result] = await pool.query(
         "INSERT INTO habit_logs (habit_id, log_date) VALUES (?, ?)",
