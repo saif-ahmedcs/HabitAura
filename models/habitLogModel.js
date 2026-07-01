@@ -81,12 +81,29 @@ async function resolveDecision(habitLogId, status) {
   return result.affectedRows;
 }
 
+async function findPendingByHabit(habitId) {
+  const [rows] = await pool.query(
+    `SELECT habit_logs.id,
+            habit_logs.habit_id,
+            habits.title AS habit_name,
+            habit_logs.log_date AS missed_date,
+            habit_logs.created_at
+     FROM habit_logs
+     JOIN habits ON habit_logs.habit_id = habits.id
+     WHERE habit_logs.status = 'pending_review'
+       AND habit_logs.habit_id = ?`,
+    [habitId],
+  );
+  return rows[0] || null;
+}
+
 module.exports = {
   expireStaleReviews,
   getHabitsMissingLogForDate,
   getLogsForHabit,
   insertPendingReview,
   findPending,
+  findPendingByHabit,
   findPendingByHabitAndDate,
   resolveDecision,
 };
