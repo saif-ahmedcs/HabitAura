@@ -40,4 +40,45 @@ router.get(
   }),
 );
 
+router.post(
+  "/decisions",
+  asyncHandler(async (req, res) => {
+    const { decisions } = req.body;
+
+    if (!Array.isArray(decisions) || decisions.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "decisions must be a non-empty array" });
+    }
+
+    const results = [];
+
+    for (const item of decisions) {
+      const { habitId, missedDate, decision } = item || {};
+
+      if (decision !== "completed" && decision !== "missed") {
+        results.push({ habitId, missedDate, result: "invalid_decision" });
+        continue;
+      }
+
+      const pending = await habitLogModel.findPendingByHabitAndDate(
+        habitId,
+        missedDate,
+      );
+
+      if (!pending) {
+        results.push({ habitId, missedDate, result: "not_found" });
+        continue;
+      }
+
+      const newStatus = decision === "completed" ? "recovered" : "missed";
+      await habitLogModel.resolveDecision(pending.id, newStatus);
+
+      results.push({ habitId, missedDate, result: newStatus });
+    }
+
+    res.status(200).json({ results });
+  }),
+);
+
 module.exports = router;
