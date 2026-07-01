@@ -2,14 +2,33 @@ const express = require("express");
 const asyncHandler = require("../utils/asyncHandler");
 const pool = require("../db");
 const calculateStreaks = require("../utils/streak");
+const pendingReviewService = require("../services/pendingReviewService");
+const habitLogModel = require("../models/habitLogModel");
 
 const router = express.Router();
 
 router.get(
   "/",
   asyncHandler(async (req, res) => {
+    await pendingReviewService.evaluatePendingReviews();
+
     const [rows] = await pool.query("SELECT * FROM habits");
-    res.status(200).json(rows);
+    const pendingRows = await habitLogModel.findPending();
+    const pendingByHabitId = new Map(
+      pendingRows.map((row) => [row.habit_id, row]),
+    );
+
+    const habitsWithPending = rows.map((habit) => {
+      const pending = pendingByHabitId.get(habit.id);
+      return {
+        ...habit,
+        pendingReview: pending
+          ? { missedDate: pending.missed_date, createdAt: pending.created_at }
+          : null,
+      };
+    });
+
+    res.status(200).json(habitsWithPending);
   }),
 );
 
@@ -61,7 +80,18 @@ router.get(
       asOfDate,
     );
 
-    res.status(200).json({ ...rows[0], currentStreak, longestStreak });
+    await pendingReviewService.evaluatePendingReviews();
+    const pending = await habitLogModel.findPendingByHabit(id);
+    const pendingReview = pending
+      ? { missedDate: pending.missed_date, createdAt: pending.created_at }
+      : null;
+
+    res.status(200).json({
+      ...rows[0],
+      currentStreak,
+      longestStreak,
+      pendingReview,
+    });
   }),
 );
 
