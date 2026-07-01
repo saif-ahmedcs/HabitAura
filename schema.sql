@@ -8,6 +8,7 @@ CREATE TABLE habit_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   habit_id INT NOT NULL,
   log_date DATE NOT NULL,
+  status ENUM('pending','completed','pending_review','recovered','shielded','missed') NOT NULL DEFAULT 'pending',
   FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE,
   UNIQUE KEY unique_habit_date (habit_id, log_date)
 );
