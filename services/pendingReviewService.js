@@ -11,19 +11,21 @@ async function evaluatePendingReviews() {
   const candidates = await habitLogModel.getHabitsMissingLogForDate(yesterday);
 
   for (const habit of candidates) {
-    const logs = await habitLogModel.getLogsForHabit(habit.id);
+    const existingPending = await habitLogModel.findPendingByHabit(habit.id);
+    if (existingPending) {
+      continue;
+    }
 
-    const dateStrings = logs
-      .filter(
-        (log) =>
-          log.status === "completed" ||
-          log.status === "recovered" ||
-          log.status === "shielded",
-      )
-      .map((log) => log.log_date);
+    const rawLogs = await habitLogModel.getLogsForHabit(habit.id);
+    const logs = rawLogs.map((log) => ({
+      date: log.log_date,
+      status: log.status,
+    }));
 
+    // Check whether a streak was alive going into the missed day (as of
+    // the day before the gap), not as of yesterday itself
     const dayBeforeGap = getPreviousUtcDate(new Date(`${yesterday}T00:00:00Z`));
-    const { currentStreak } = calculateStreaks(dateStrings, dayBeforeGap);
+    const { currentStreak } = calculateStreaks(logs, dayBeforeGap);
 
     if (currentStreak > 0) {
       await habitLogModel.insertPendingReview(habit.id, yesterday);

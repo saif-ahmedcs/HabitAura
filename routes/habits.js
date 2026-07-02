@@ -69,16 +69,16 @@ router.get(
     }
 
     const [logRows] = await pool.query(
-      "SELECT log_date FROM habit_logs WHERE habit_id = ?",
+      "SELECT log_date, status FROM habit_logs WHERE habit_id = ?",
       [id],
     );
 
-    const dateStrings = logRows.map((row) => row.log_date);
+    const logs = logRows.map((row) => ({
+      date: row.log_date,
+      status: row.status,
+    }));
     const asOfDate = new Date().toISOString().slice(0, 10);
-    const { currentStreak, longestStreak } = calculateStreaks(
-      dateStrings,
-      asOfDate,
-    );
+    const { currentStreak, longestStreak } = calculateStreaks(logs, asOfDate);
 
     await pendingReviewService.evaluatePendingReviews();
     const pending = await habitLogModel.findPendingByHabit(id);
